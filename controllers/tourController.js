@@ -1,7 +1,6 @@
 const Tour = require('../models/tourModel');
 
 exports.getAllTours = async (req, res) => {
-  
   try {
     const tours = await Tour.find();
     res.status(200).json({
@@ -40,8 +39,16 @@ exports.getTour = async (req, res) => {
 
 exports.createTour = async (req, res) => {
   try {
+    // Validate the request body against the Mongoose schema
+    const { name, price } = req.body;
+    if (!name || !price) {
+      return res.status(400).json({
+        status: 'failed',
+        message: 'Name and price are required fields.',
+      });
+    }
+
     const newTour = await Tour.create(req.body);
-    console.log('12', newTour);
 
     res.status(201).json({
       status: 'success',
@@ -52,24 +59,45 @@ exports.createTour = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       status: 'failed',
-      message: error,
+      message: error.message,
     });
-    console.log('error', error);
   }
 };
 
-exports.updateTour = (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour: '<updated tour>',
-    },
-  });
+exports.updateTour = async (req, res) => {
+  try {
+    const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        tour,
+      },
+    });
+  } catch (error) {
+    console.log('error', error);
+    res.status(400).json({
+      status: 'failed',
+      message: error,
+    });
+  }
 };
 
-exports.deleteTour = (req, res) => {
-  res.status(204).json({
-    status: 'success',
-    data: null,
-  });
+exports.deleteTour = async (req, res) => {
+  try {
+    await Tour.findByIdAndDelete(req.params.id);
+
+    res.status(204).json({
+      status: 'success',
+      data: null,
+    });
+  } catch (error) {
+    res.status(401).json({
+      status: 'failed',
+      message: error,
+    });
+  }
 };
